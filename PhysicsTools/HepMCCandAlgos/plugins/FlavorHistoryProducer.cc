@@ -15,9 +15,9 @@
 //
 //
 // Matrix Element:
-//    Status 3 parent with precisely 2 "grandparents" that
+//    Status 2x parent with precisely 2 "grandparents" that
 //    is outside of the "initial" section (0-5) that has the
-//    same ID as the status 2 parton in question.
+//    same ID as the status 7x parton in question.
 //
 // Flavor excitation:
 //    If we find only one outgoing parton.
@@ -101,9 +101,9 @@ void FlavorHistoryProducer::produce( Event& evt, const EventSetup& )
     int idabs = std::abs( (p)->pdgId() );
     int nDa = (p)->numberOfDaughters();
 
-    // Check if we have a status 2 or 3 particle, which is a parton before the string.
-    // Only consider quarks.
-    if ( idabs <= FlavorHistory::tQuarkId && p->status() == 2 &&
+    // Check if we have a status 7x (pythia6 status 7x equiv) or 2x (pythia6 status 2x equiv) particle, 
+    // which is a parton before the string. Only consider quarks.
+    if ( idabs <= FlavorHistory::tQuarkId && p->status()/10 == 7 &&
 	 idabs == pdgIdToSelect_ ) {
       // Ensure the parton in question has daughters
       if ( nDa > 0 ) {
@@ -111,7 +111,7 @@ void FlavorHistoryProducer::produce( Event& evt, const EventSetup& )
 	if((p)->pt() > ptMinShower_ && fabs((p)->eta())<etaMaxShower_) {
 
  	  if(verbose_) cout << "--------------------------" << endl;
- 	  if(verbose_) cout << "Processing particle " << j << ", status = " << p->status() << ", pdg id = " << p->pdgId() << endl;
+ 	  if(verbose_) cout << "Processing particle " << j << ", status = " << p->status() << ", pdg id = " << p->pdgId() << ", pt = " << p->pt() << endl;
 
 
 	  //Main (but simple) workhorse to get all ancestors
@@ -131,9 +131,9 @@ void FlavorHistoryProducer::produce( Event& evt, const EventSetup& )
 	  //
 	  //
 	  // Matrix Element:
-	  //    Status 3 parent with precisely 2 "grandparents" that
+	  //    Status 2x parent with precisely 2 "grandparents" that
 	  //    is outside of the "initial" section (0-5) that has the
-	  //    same ID as the status 2 parton in question.
+	  //    same ID as the status 7x parton in question.
 	  //
 	  // Flavor excitation:
 	  //    If we find only one outgoing parton.
@@ -166,16 +166,16 @@ void FlavorHistoryProducer::produce( Event& evt, const EventSetup& )
 	    // -----------------------------------------------------------------------
  	    if( progenitorIndex > 5 ) {
 	      // Here is where we have a matrix element process.
-	      // The signature is to have a status 3 parent with precisely 2 parents
+	      // The signature is to have a status 2x parent with precisely 2 parents
 	      // that is outside of the "initial" section (0-5) that has the
-	      // same ID as the status 2 parton in question.
+	      // same ID as the status 7x parton in question.
 	      // NOTE: If this parton has no sister, then this will be classified as
 	      // a flavor excitation. Often the only difference is that the matrix element
 	      // cases have a sister, while the flavor excitation cases do not.
 	      // If we do not find a sister below, this will be classified as a flavor
 	      // excitation.
 	      if(  aParent->numberOfMothers() == 2 &&
-		  aParent->pdgId() == p->pdgId() && aParent->status() == 3 ) {
+		   aParent->pdgId() == p->pdgId() && aParent->status()/10 == 2 ) {
 		if(verbose_) cout << "Matrix Element progenitor" << endl;
 		if ( flavorSource == FlavorHistory::FLAVOR_NULL ) flavorSource = FlavorHistory::FLAVOR_ME;
 		foundProgenitor = true;
@@ -190,7 +190,7 @@ void FlavorHistoryProducer::produce( Event& evt, const EventSetup& )
 	    }// end if progenitorIndex > 5
 	  }// end loop over parents
 
-	  // Otherwise, classify it as gluon splitting. Take the first status 3 parton with 1 parent
+	  // Otherwise, classify it as gluon splitting. Take the first status 2x parton with 1 parent
 	  // that you see as the progenitor
 	  if ( !foundProgenitor  ) {
 	    if ( flavorSource == FlavorHistory::FLAVOR_NULL ) flavorSource = FlavorHistory::FLAVOR_GS;
@@ -201,14 +201,14 @@ void FlavorHistoryProducer::produce( Event& evt, const EventSetup& )
 	      // Get the index of the progenitor candidate
 	      progenitorIndex = found - particles.begin();
 
-	      if ( aParent->numberOfMothers() == 1 && aParent->status() == 3 ) {
+	      if ( aParent->numberOfMothers() == 1 && aParent->status()/10 == 2 ) {
 		foundProgenitor = true;
 	      }
 	    }// end loop over parents
-	  }// end if we haven't found a progenitor, and if we haven't found a status 3 parton of the same flavor
+	  }// end if we haven't found a progenitor, and if we haven't found a status 2x parton of the same flavor
 	   // (i.e. end if examining gluon splitting)
 	}// End if this parton passes some minimal kinematic cuts
-      }// End if this particle is status 2 (has strings as daughters)
+      }// End if this particle is status 7x (has strings as daughters)
 
 
 
@@ -222,7 +222,7 @@ void FlavorHistoryProducer::produce( Event& evt, const EventSetup& )
       flavorSources.push_back(flavorSource);
       sisterIndices.push_back( -1 ); // set below
 
-    }// End if this particle was a status==2 parton
+    }// End if this particle was a status==7x parton
   }// end loop over particles
 
   // Now add sisters.
@@ -246,7 +246,7 @@ void FlavorHistoryProducer::produce( Event& evt, const EventSetup& )
       if ( verbose_ ) cout << "   Sister candidate particle 2:  " << jj << ", pdgid = " << candj->pdgId() << ", status = " << candj->status() << endl;
 	  // They should be opposite in pdgid and have the same status, and
 	  // the same progenitory.
-	  if ( candi->pdgId() == -1 * candj->pdgId() && candi->status() == candj->status()  ) {
+	  if ( candi->pdgId() == -1 * candj->pdgId() && candi->status()/10 == candj->status()/10  ) {
 	    sisterIndices[ii] = partonIndices[jj];
 	    if ( verbose_ ) cout << "Parton " << partonIndices[ii] << " has sister " << sisterIndices[ii] << endl;
 	  }
